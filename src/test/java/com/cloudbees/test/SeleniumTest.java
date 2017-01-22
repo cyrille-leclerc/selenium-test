@@ -19,45 +19,61 @@ package com.cloudbees.test;
  * under the License.
  */
 
+import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
-import java.util.Arrays;
-import java.util.List;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 /**
  * @author <a href="mailto:cleclerc@cloudbees.com">Cyrille Le Clerc</a>
  */
 public class SeleniumTest {
 
+
     @Test
-    public void testFirefoxDriver()  throws Exception {
+    public void testSeleniumRemoteWebDriverUrl() throws Exception {
+        URL url = new URL("http://localhost:4444/wd/hub");
+        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+        System.out.println(url + " -> " + urlConnection.getResponseCode() + urlConnection.getResponseMessage());
+    }
+
+    @Test
+    public void testFirefoxDriver() throws Exception {
         System.err.println("");
         System.err.println("#############################");
         System.err.println("# INSTANTIATE FirefoxDriver");
         System.err.println("#############################");
+
 
         FirefoxDriver webDriver = new FirefoxDriver();
         testSeleniumDriver(webDriver);
     }
 
     @Test
-    public void testRemoteWebDriverWithFirefox()  throws Exception {
-        List<DesiredCapabilities> capabilitiesList = Arrays.asList(new DesiredCapabilities(), DesiredCapabilities.firefox(), DesiredCapabilities.chrome(), DesiredCapabilities.htmlUnit());
+    public void testRemoteWebDriverWithFirefox() throws Exception {
+        testSeleniumRemoteWebDriver(DesiredCapabilities.firefox());
+    }
 
-        for(DesiredCapabilities capabilities: capabilitiesList) {
-            try {
-                testSeleniumDriver(new RemoteWebDriver(capabilities));
-            } catch (Exception e) {
-                System.err.println("");
-                System.err.println("EXCEPTION");
-                e.printStackTrace();
-                System.err.println("");
-            }
-        }
+    @Ignore
+    @Test
+    public void testRemoteWebDriverWithChrome() throws Exception {
+        testSeleniumRemoteWebDriver(DesiredCapabilities.chrome());
+    }
+
+    private void testSeleniumRemoteWebDriver(DesiredCapabilities desiredCapabilities) {
+        System.err.println("");
+        System.err.println("#############################");
+        System.err.println("# INSTANTIATE RemoteWebDriver (" + desiredCapabilities + ")");
+        System.err.println("#############################");
+        WebDriver webDriver = new RemoteWebDriver(desiredCapabilities);
+        testSeleniumDriver(webDriver);
     }
 
     private void testSeleniumDriver(WebDriver webDriver) {
@@ -66,8 +82,13 @@ public class SeleniumTest {
         System.err.println("# TEST WITH " + webDriver);
         System.err.println("#############################");
         try {
-            webDriver.get("https://google.com");
-            System.out.println(webDriver.toString() + " -> " + webDriver.getCurrentUrl() + " -> " + webDriver.getTitle());
+            String url = "https://google.com";
+            webDriver.get(url);
+            Assert.assertEquals(
+                    "Unexpected page title requesting " + url + " with selenium driver " + webDriver.toString() + " displaying " + webDriver.getCurrentUrl(),
+                    "Google",
+                    webDriver.getTitle());
+            System.err.println("SUCCESSFULLY invoked Selenium driver" + webDriver.toString() + " with URL " + webDriver.getCurrentUrl() + ", page.title='" + webDriver.getTitle() + "'");
         } finally {
             webDriver.close();
             webDriver.quit();
